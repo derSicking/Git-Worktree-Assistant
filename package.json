@@ -1,0 +1,71 @@
+{
+  "name": "git-worktree-assistant",
+  "displayName": "Git Worktree Assistant",
+  "description": "Offers commands to add, remove and work with git worktrees.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.83.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "git-worktree-assistant.addWorktree",
+        "title": "Add Worktree"
+      },
+      {
+        "command": "git-worktree-assistant.removeWorktree",
+        "title": "Remove Worktree"
+      },
+      {
+        "command": "git-worktree-assistant.switchToWorktree",
+        "title": "Switch to Worktree"
+      },
+      {
+        "command": "git-worktree-assistant.openWorktree",
+        "title": "Open Worktree in new Window"
+      }
+    ],
+    "configuration": {
+      "title": "Git Worktree Assistant",
+      "properties": {
+        "gitWorktreeAssistant.addWorktree.defaultWorktreeDirectory": {
+          "type": "string",
+          "default": "../worktrees/",
+          "description": "The suggested worktree path will use this directory as parent."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.2",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.83.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/parser": "^6.7.3",
+    "@vscode/test-electron": "^2.3.4",
+    "eslint": "^8.50.0",
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.2.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "prettier": "^3.0.3"
+  }
+}
