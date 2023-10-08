@@ -1,5 +1,6 @@
 import { ChildProcess, exec, spawn, spawnSync } from "child_process";
 import { error } from "console";
+import { existsSync } from "fs";
 import { get } from "http";
 import * as vscode from "vscode";
 
@@ -26,6 +27,10 @@ interface Worktree {
   path: string;
   head?: string;
   branch?: string;
+}
+
+interface PickableWorktree extends vscode.QuickPickItem {
+  worktree: Worktree;
 }
 
 const config = vscode.workspace.getConfiguration("gitWorktreeAssistant");
@@ -69,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
         option: "detached",
       },
       { label: "", kind: vscode.QuickPickItemKind.Separator },
-      ...filterUniqueBranches(allBranches).map<PickableGitRef>(makePickable),
+      ...filterUniqueBranches(allBranches).map<PickableGitRef>(makeGitRefPickable),
     ];
     const destinationBranchSelection = await vscode.window.showQuickPick(selectableDestinationBranches, {
       matchOnDescription: true,
@@ -80,7 +85,17 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // TODO: if an existing branch with an existing worktree was chosen offer to switch
+    if (destinationBranchSelection.ref?.worktree) {
+      const openSelection = await vscode.window.showQuickPick(["Cancel", "Switch to worktree", "Open worktree in new window"], {
+        title: "A worktree for this branch already exists! Do you want to open it?",
+      });
+      if (openSelection === "Switch to worktree") {
+        openWorktreeOrWorkspace(destinationBranchSelection.ref.worktree.path, false);
+      } else if (openSelection === "Open worktree in new window") {
+        openWorktreeOrWorkspace(destinationBranchSelection.ref.worktree.path, true);
+      }
+      return;
+    }
 
     let baseBranchSelection: PickableGitRef | undefined = undefined;
     let baseCommitHash: string | undefined = undefined;
@@ -96,10 +111,10 @@ export function activate(context: vscode.ExtensionContext) {
       // get the base branch
       const head = allBranches.find((ref) => ref.isHead);
       let selectableBaseBranches: PickableGitRef[] = [
-        ...(head ? [makePickable(head)] : []),
+        ...(head ? [makeGitRefPickable(head)] : []),
         { label: "Enter custom commit", alwaysShow: true, option: "new" },
         { label: "", kind: vscode.QuickPickItemKind.Separator },
-        ...allBranches.filter((ref) => !ref.isHead).map<PickableGitRef>(makePickable),
+        ...allBranches.filter((ref) => !ref.isHead).map<PickableGitRef>(makeGitRefPickable),
       ];
       baseBranchSelection = await vscode.window.showQuickPick(selectableBaseBranches, {
         matchOnDescription: true,
@@ -176,11 +191,62 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     if (addExitStatus === 0) {
-      // TODO: offer to switch to new worktree
+      const openSelection = await vscode.window.showQuickPick(["Finish", "Switch to worktree", "Open worktree in new window"], {
+        title: "Worktree added successfully! Do you want to open it?",
+      });
+      if (openSelection === "Switch to worktree") {
+        openWorktreeOrWorkspace(worktreePath, false);
+      } else if (openSelection === "Open worktree in new window") {
+        openWorktreeOrWorkspace(worktreePath, true);
+      }
     }
   });
 
   context.subscriptions.push(disposable);
+
+  disposable = vscode.commands.registerCommand("git-worktree-assistant.switchToWorktree", async () => {
+    openWorktreeOrWorkspace((await chooseWorktree())?.worktree.path, false);
+  });
+
+  disposable = vscode.commands.registerCommand("git-worktree-assistant.openWorktree", async () => {
+    openWorktreeOrWorkspace((await chooseWorktree())?.worktree.path, true);
+  });
+
+  context.subscriptions.push(disposable);
+}
+
+async function chooseWorktree() {
+  const allWorktrees = await getAllWorktrees();
+  if (!allWorktrees) {
+    return undefined;
+  }
+
+  return await vscode.window.showQuickPick(allWorktrees.map(makeWorktreePickable));
+}
+
+function getWorkspaceFileForWorktree(path: string | undefined) {
+  if (!path || path.trim().length === 0) {
+    return undefined;
+  }
+
+  const workspaceFilePath: string | undefined = config.get("openWorktree.workspaceFileLocation");
+  if (!workspaceFilePath || workspaceFilePath.trim().length === 0) {
+    return undefined;
+  }
+
+  const fullPath = path + "/" + workspaceFilePath;
+  if (existsSync(fullPath)) {
+    return fullPath;
+  }
+  return undefined;
+}
+
+async function openWorktreeOrWorkspace(path: string | undefined, newWindow: boolean) {
+  if (!path || path.trim().length === 0) {
+    return;
+  }
+
+  await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(getWorkspaceFileForWorktree(path) ?? path), { forceNewWindow: newWindow });
 }
 
 async function runAddWorktreeCommand(...args: string[]) {
@@ -193,8 +259,8 @@ async function runAddWorktreeCommand(...args: string[]) {
     gitProcess.on("close", (exitCode) => {
       if (exitCode !== 0) {
         vscode.window.showErrorMessage("Adding worktree failed! " + stderr);
-        resolve(exitCode);
       }
+      resolve(exitCode);
     });
   });
 }
@@ -212,7 +278,7 @@ function getWorktreeName(branchName: string | undefined, baseCommitHash: string 
   return "detached-" + baseCommitHash;
 }
 
-function makePickable(ref: GitRef): PickableGitRef {
+function makeGitRefPickable(ref: GitRef): PickableGitRef {
   return {
     label: ref.name,
     description:
@@ -225,6 +291,14 @@ function makePickable(ref: GitRef): PickableGitRef {
     detail: ref.author + ": " + ref.message + " (" + timeAgo(ref.date) + ")",
     iconPath: new vscode.ThemeIcon("git-branch"),
     ref,
+  };
+}
+
+function makeWorktreePickable(worktree: Worktree): PickableWorktree {
+  return {
+    label: worktree.path,
+    detail: worktree.branch,
+    worktree,
   };
 }
 

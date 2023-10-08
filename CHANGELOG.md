@@ -9,4 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Worktree command that allows users to add new worktrees and check out new or existing branches.
+- `Add Worktree` command that allows users to add new worktrees and check out new or existing branches.
+- `Switch to Worktree` and `Open Worktree in New Window` commands to Change the VS Code Workspace.

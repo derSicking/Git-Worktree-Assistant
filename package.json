@@ -27,7 +27,7 @@
       },
       {
         "command": "git-worktree-assistant.openWorktree",
-        "title": "Open Worktree in new Window"
+        "title": "Open Worktree in New Window"
       }
     ],
     "configuration": {
@@ -37,6 +37,11 @@
           "type": "string",
           "default": "../worktrees/",
           "description": "The suggested worktree path will use this directory as parent."
+        },
+        "gitWorktreeAssistant.openWorktree.workspaceFileLocation": {
+          "type": "string",
+          "default": "project.workspace",
+          "description": "The path to the *.workspace file to use when opening worktrees, relative to the worktrees root directory. If this is empty or the file is not found, the root directory will be opened instead."
         }
       }
     }
