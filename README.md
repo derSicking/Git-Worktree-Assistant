@@ -28,7 +28,7 @@ Your Workspace needs to be a git repository and the `git` command has to be avai
 This extension contributes the following settings:
 
 - `gitWorktreeAssistant.addWorktree.defaultWorktreeDirectory`: The path where worktrees are reccomended to be created (relative to repo root).
-- `gitWorktreeAssistant.openWorktree.workspaceFileLocation`: The path where a `*.workspace` file can be found (relative to worktree root).
+- `gitWorktreeAssistant.openWorktree.workspaceFileLocation`: The path where a `*.code-workspace` file can be found (relative to worktree root).
 
 ## Known Issues
 
