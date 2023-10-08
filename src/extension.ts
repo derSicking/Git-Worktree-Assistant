@@ -484,7 +484,7 @@ async function getAllWorktrees() {
     }
   });
 
-  return worktrees;
+  return worktrees.filter((wt) => !!wt && !!wt.path);
 }
 
 async function isValidCommit(hash: string): Promise<boolean> {
