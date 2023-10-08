@@ -3,6 +3,7 @@
   "displayName": "Git Worktree Assistant",
   "description": "Offers commands to add, remove and work with git worktrees.",
   "repository": "https://github.com/derSicking/git-worktree-assistant",
+  "publisher": "derSicking",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.83.0"
