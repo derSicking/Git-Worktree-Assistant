@@ -212,6 +212,14 @@ export function activate(context: vscode.ExtensionContext) {
     openWorktreeOrWorkspace((await chooseWorktree())?.worktree.path, true);
   });
 
+  disposable = vscode.commands.registerCommand("git-worktree-assistant.removeWorktree", async () => {
+    let path = (await chooseWorktree())?.worktree.path;
+    let exitCode = await runRemoveWorktreeCommand(path);
+    if (exitCode !== undefined && exitCode === 0) {
+      vscode.window.showInformationMessage("Worktree '" + path + "' removed successfully!");
+    }
+  });
+
   context.subscriptions.push(disposable);
 }
 
@@ -247,6 +255,25 @@ async function openWorktreeOrWorkspace(path: string | undefined, newWindow: bool
   }
 
   await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(getWorkspaceFileForWorktree(path) ?? path), { forceNewWindow: newWindow });
+}
+
+async function runRemoveWorktreeCommand(path: string | undefined) {
+  if (!path || path.trim().length === 0) {
+    return;
+  }
+  const gitProcess = spawn("git", ["worktree", "remove", path], { cwd: await getRootDirectory() });
+  let stderr = "";
+  gitProcess.stderr.on("data", (data) => {
+    stderr += data.toString();
+  });
+  return new Promise<number | null>((resolve) => {
+    gitProcess.on("close", (exitCode) => {
+      if (exitCode !== 0) {
+        vscode.window.showErrorMessage("Removing worktree failed! " + stderr);
+      }
+      resolve(exitCode);
+    });
+  });
 }
 
 async function runAddWorktreeCommand(...args: string[]) {

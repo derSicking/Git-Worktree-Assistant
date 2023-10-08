@@ -11,6 +11,14 @@ Use the Command Palette to create a new worktree with the `Add Worktree` command
 the process of picking options or branches for your worktree and suggests a location. The default worktree
 directory can be adjusted in the extension settings.
 
+### Remove worktrees
+
+Use the `Remove Worktree` command to choose an existing worktree from a list and remove it.
+
+### Open a worktree in VS Code
+
+Use the `Switch to Worktree` or `Open Worktree in New Window` commands to open the folder or workspace file of a worktree with VS Code.
+
 ## Requirements
 
 Your Workspace needs to be a git repository and the `git` command has to be available on your system.
