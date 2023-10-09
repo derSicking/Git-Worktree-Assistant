@@ -2,6 +2,7 @@ import { ChildProcess, exec, spawn, spawnSync } from "child_process";
 import { error } from "console";
 import { existsSync } from "fs";
 import { get } from "http";
+import { resolve } from "path";
 import * as vscode from "vscode";
 
 interface GitRef {
@@ -383,7 +384,15 @@ async function loadAheadBehind(local: GitRef | undefined, remote: GitRef) {
 }
 
 async function getRootDirectory() {
+  if (await doPathToolsExist()) {
+    return getRootDirectoryUsingPathTools();
+  }
   const path = await getCommandOutput("git rev-parse --path-format=absolute --git-common-dir");
+  return path?.substring(0, path.lastIndexOf("/"));
+}
+
+async function getRootDirectoryUsingPathTools() {
+  const path = await getCommandOutput("dirname $(readlink -f $(git rev-parse --git-common-dir))");
   return path?.substring(0, path.lastIndexOf("/"));
 }
 
@@ -526,6 +535,29 @@ async function isValidBranchName(name: string): Promise<boolean> {
       resolve(true);
     });
   });
+}
+
+async function doPathToolsExist(): Promise<boolean> {
+  const process1 = spawn("which", ["dirname"]);
+  const process2 = spawn("which", ["readlink"]);
+  return Promise.all([
+    new Promise<boolean>((resolve, reject) => {
+      process1.on("close", (exitCode) => {
+        if (exitCode !== 0) {
+          resolve(false);
+        }
+        resolve(true);
+      });
+    }),
+    new Promise<boolean>((resolve, reject) => {
+      process2.on("close", (exitCode) => {
+        if (exitCode !== 0) {
+          resolve(false);
+        }
+        resolve(true);
+      });
+    }),
+  ]).then((results) => results[0] && results[1]);
 }
 
 function splitLines(lines?: string, keepEmpty = false): string[] | undefined {

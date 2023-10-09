@@ -4,7 +4,7 @@
   "description": "Offers commands to add, remove and work with git worktrees.",
   "repository": "https://github.com/derSicking/git-worktree-assistant",
   "publisher": "derSicking",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.83.0"
   },

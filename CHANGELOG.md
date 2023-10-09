@@ -6,10 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### 0.1.2
+
 ### Fixed
 
 - The README and CHANGELOG were inaccurate about major version 0.
 - Branches with commits with certain characters in their messages prevented adding worktrees.
+- Add alternative way to determine the repo root directory for systems with old git versions (with no `--path-format=absolute` option).
 
 ## 0.1.1
 
