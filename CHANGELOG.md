@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - The README and CHANGELOG were inaccurate about major version 0.
+- Branches with commits with certain characters in their messages prevented adding worktrees.
 
 ## 0.1.1
 
