@@ -3,6 +3,11 @@
 This extension aims to make working with worktrees in VS Code easy and accessible, without having to
 learn the command line interface for worktrees.
 
+## WORK IN PROGRESS
+
+This Extension is currently in its very early stages of development and contains a lot of bugs. Use it
+at your onw risk.
+
 ## Features
 
 ### Add new worktrees
@@ -36,6 +41,8 @@ If commands do not work for unknown reasons, consider updating your git installa
 
 ## Release Notes
 
-Also see [the change log](CHANGELOG.md).
+These Release Notes document major changes to the extension that change the major or minor version number, e.g. new features.
 
-No releases yet...
+For all changes, see [the change log](CHANGELOG.md).
+
+No releases yet... (I regard this as unreleased until major version 1)
