@@ -448,7 +448,7 @@ async function getAllRefs() {
     for (let i = 6; i < refSplit.length; i++) {
       message += refSplit[i] + "::";
     }
-    message = message.substring(0, message.length - 1);
+    message = message.substring(0, message.length - 2);
 
     refs.push({
       source: ref.source,
