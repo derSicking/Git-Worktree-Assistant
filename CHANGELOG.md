@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### 0.1.3
+
+### Fixed
+
+- Removed git calls from repo root due to bugs.
+- Fixed incorrect 'not in a git repo' error messages.
+
 ### 0.1.2
 
 ### Fixed

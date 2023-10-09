@@ -262,7 +262,7 @@ async function runRemoveWorktreeCommand(path: string | undefined) {
   if (!path || path.trim().length === 0) {
     return;
   }
-  const gitProcess = spawn("git", ["worktree", "remove", path], { cwd: await getRootDirectory() });
+  const gitProcess = spawn("git", ["worktree", "remove", path], { cwd: await getCurrentWorktreeDirectory() });
   let stderr = "";
   gitProcess.stderr.on("data", (data) => {
     stderr += data.toString();
@@ -278,7 +278,7 @@ async function runRemoveWorktreeCommand(path: string | undefined) {
 }
 
 async function runAddWorktreeCommand(...args: string[]) {
-  const gitProcess = spawn("git", ["worktree", "add", ...args], { cwd: await getRootDirectory() });
+  const gitProcess = spawn("git", ["worktree", "add", ...args], { cwd: await getCurrentWorktreeDirectory() });
   let stderr = "";
   gitProcess.stderr.on("data", (data) => {
     stderr += data.toString();
@@ -381,19 +381,6 @@ async function loadAheadBehind(local: GitRef | undefined, remote: GitRef) {
   local.behind = Number(behind);
   remote.behind = Number(ahead);
   remote.ahead = Number(behind);
-}
-
-async function getRootDirectory() {
-  if (await doPathToolsExist()) {
-    return getRootDirectoryUsingPathTools();
-  }
-  const path = await getCommandOutput("git rev-parse --path-format=absolute --git-common-dir");
-  return path?.substring(0, path.lastIndexOf("/"));
-}
-
-async function getRootDirectoryUsingPathTools() {
-  const path = await getCommandOutput("dirname $(readlink -f $(git rev-parse --git-common-dir))");
-  return path?.substring(0, path.lastIndexOf("/"));
 }
 
 function getCurrentWorkspaceDirectory() {
@@ -537,45 +524,22 @@ async function isValidBranchName(name: string): Promise<boolean> {
   });
 }
 
-async function doPathToolsExist(): Promise<boolean> {
-  const process1 = spawn("which", ["dirname"]);
-  const process2 = spawn("which", ["readlink"]);
-  return Promise.all([
-    new Promise<boolean>((resolve, reject) => {
-      process1.on("close", (exitCode) => {
-        if (exitCode !== 0) {
-          resolve(false);
-        }
-        resolve(true);
-      });
-    }),
-    new Promise<boolean>((resolve, reject) => {
-      process2.on("close", (exitCode) => {
-        if (exitCode !== 0) {
-          resolve(false);
-        }
-        resolve(true);
-      });
-    }),
-  ]).then((results) => results[0] && results[1]);
-}
-
 function splitLines(lines?: string, keepEmpty = false): string[] | undefined {
   return lines?.split("\n").filter((s) => keepEmpty || s.trim().length > 0);
 }
 
 async function getCommandOutput(command: string, workingDir?: string): Promise<string | undefined> {
-  let output = undefined;
-  await awaitProcess(
-    exec(command, { cwd: workingDir ?? (await getCurrentWorktreeDirectory()) }, (error, stdout, stderr) => {
+  const directory = workingDir ?? (await getCurrentWorktreeDirectory());
+  return new Promise<string>((resolve, reject) => {
+    exec(command, { cwd: directory }, (error, stdout, stderr) => {
       if (error) {
         console.error("error: ", stderr);
+        reject(stderr);
         return;
       }
-      output = stdout;
-    })
-  );
-  return output;
+      resolve(stdout);
+    });
+  });
 }
 
 async function awaitCommand(command: string, workingDir?: string) {
