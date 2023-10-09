@@ -267,12 +267,14 @@ async function runRemoveWorktreeCommand(path: string | undefined) {
   gitProcess.stderr.on("data", (data) => {
     stderr += data.toString();
   });
-  return new Promise<number | null>((resolve) => {
-    gitProcess.on("close", (exitCode) => {
-      if (exitCode !== 0) {
-        vscode.window.showErrorMessage("Removing worktree failed! " + stderr);
-      }
-      resolve(exitCode);
+  return vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Removing Worktree..." }, async (progress) => {
+    return new Promise<number | null>((resolve) => {
+      gitProcess.on("close", (exitCode) => {
+        if (exitCode !== 0) {
+          vscode.window.showErrorMessage("Removing worktree failed! " + stderr);
+        }
+        resolve(exitCode);
+      });
     });
   });
 }
@@ -283,12 +285,14 @@ async function runAddWorktreeCommand(...args: string[]) {
   gitProcess.stderr.on("data", (data) => {
     stderr += data.toString();
   });
-  return new Promise<number | null>((resolve) => {
-    gitProcess.on("close", (exitCode) => {
-      if (exitCode !== 0) {
-        vscode.window.showErrorMessage("Adding worktree failed! " + stderr);
-      }
-      resolve(exitCode);
+  return vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Adding Worktree..." }, async (progress) => {
+    return new Promise<number | null>((resolve) => {
+      gitProcess.on("close", (exitCode) => {
+        if (exitCode !== 0) {
+          vscode.window.showErrorMessage("Adding worktree failed! " + stderr);
+        }
+        resolve(exitCode);
+      });
     });
   });
 }
