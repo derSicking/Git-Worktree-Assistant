@@ -12,7 +12,7 @@ interface GitRef {
   isHead: boolean;
   author: string;
   message: string;
-  date: Date;
+  date?: Date;
   ahead?: number;
   behind?: number;
   worktree?: Worktree;
@@ -315,7 +315,7 @@ function makeGitRefPickable(ref: GitRef): PickableGitRef {
       (ref.behind ? "↓" + ref.behind + " " : "") +
       (ref.upstream ? "[" + ref.upstream + "] " : "") +
       ref.id,
-    detail: ref.author + ": " + ref.message + " (" + timeAgo(ref.date) + ")",
+    detail: ref.author + ": " + ref.message + (ref.date ? " (" + timeAgo(ref.date) + ")" : ""),
     iconPath: new vscode.ThemeIcon("git-branch"),
     ref,
   };
@@ -416,7 +416,7 @@ async function getCurrentWorktreeDirectory() {
 
 async function getAllRefs() {
   const forEachRefCommand =
-    'git for-each-ref --sort=-authordate --format="%(objectname:short),%(refname:lstrip=2),%(upstream:lstrip=2),%(if)%(HEAD)%(then)true%(else)false%(end),%(authorname),%(subject),%(authordate:iso8601)"';
+    'git for-each-ref --sort=-authordate --format="%(objectname:short)::%(refname:lstrip=2)::%(upstream:lstrip=2)::%(if)%(HEAD)%(then)true%(else)false%(end)::%(authordate:iso8601)::%(authorname)::%(subject)"';
   const localLines = splitLines(await getCommandOutput(forEachRefCommand + ' "refs/heads"'))?.map((line) => {
     return { line, source: "local" as const };
   });
@@ -436,16 +436,29 @@ async function getAllRefs() {
 
   let refs: GitRef[] = [];
   lines.forEach((ref) => {
-    const refSplit = ref.line.split(",");
+    const refSplit = ref.line.split("::");
+
+    let date: Date | undefined = new Date(refSplit[4]);
+    if (!date || date.getTime() !== date.getTime()) {
+      console.log("invalid date string:", refSplit[4]);
+      date = undefined;
+    }
+
+    let message = "";
+    for (let i = 6; i < refSplit.length; i++) {
+      message += refSplit[i] + "::";
+    }
+    message = message.substring(0, message.length - 1);
+
     refs.push({
       source: ref.source,
       id: refSplit[0],
       name: refSplit[1],
       upstream: refSplit[2].length > 0 ? refSplit[2] : undefined,
       isHead: refSplit[3] === "true",
-      author: refSplit[4],
-      message: refSplit[5],
-      date: new Date(refSplit[6]),
+      date,
+      author: refSplit[5],
+      message,
       worktree: ref.source === "local" ? worktrees?.find((wt) => wt.branch === refSplit[1]) : undefined,
     });
   });
@@ -552,22 +565,27 @@ function timeAgo(date: Date, locale = "en") {
   const days = Math.floor(hours / 24);
   const months = Math.floor(days / 30);
   const years = Math.floor(months / 12);
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  try {
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
-  if (years > 0) {
-    value = rtf.format(0 - years, "year");
-  } else if (months > 0) {
-    value = rtf.format(0 - months, "month");
-  } else if (days > 0) {
-    value = rtf.format(0 - days, "day");
-  } else if (hours > 0) {
-    value = rtf.format(0 - hours, "hour");
-  } else if (minutes > 0) {
-    value = rtf.format(0 - minutes, "minute");
-  } else {
-    value = rtf.format(0 - diff, "second");
+    if (years > 0) {
+      value = rtf.format(0 - years, "year");
+    } else if (months > 0) {
+      value = rtf.format(0 - months, "month");
+    } else if (days > 0) {
+      value = rtf.format(0 - days, "day");
+    } else if (hours > 0) {
+      value = rtf.format(0 - hours, "hour");
+    } else if (minutes > 0) {
+      value = rtf.format(0 - minutes, "minute");
+    } else {
+      value = rtf.format(0 - diff, "second");
+    }
+    return value;
+  } catch (error) {
+    console.error("invalid date:", date, "error: " + error);
+    return "invalid date";
   }
-  return value;
 }
 
 export function deactivate() {}
